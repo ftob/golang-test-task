@@ -1,0 +1,47 @@
+version: '3.5'
+services:
+  app:
+    build: .
+    stdin_open: true
+    tty: true
+    networks:
+      - backend
+    ports:
+      - 8081:8081
+  prometheus:
+    build: .docker/prometheus
+    volumes:
+      - .docker/prometheus/etc/prometheus:/etc/prometheus/
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention=1h'
+      - '--web.enable-lifecycle'
+    restart: "no"
+    ports:
+      - 9090:9090
+    networks:
+      - backend
+  grafana:
+    build: .docker/grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: "no"
+    ports:
+      - 3000:3000
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  prometheus_data: {}
+  grafana_data: {}

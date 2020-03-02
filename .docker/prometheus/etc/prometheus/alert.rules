@@ -1,0 +1,11 @@
+groups:
+
+- name: app
+  rules:
+  - alert: app_down
+    expr: probe_success{instance="http://app:8000",job="app"} == 0
+    for: 1s
+    labels:
+      severity: warning
+    annotations:
+      summary: "app is down"
