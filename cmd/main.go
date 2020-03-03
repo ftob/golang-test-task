@@ -37,23 +37,28 @@ func main() {
 		logger, _ = zap.NewProduction()
 	}
 
-	repo := mem.New([]string{})
+	repo := mem.New([]string{"http://google.com"})
 	srv := scrapper.NewHttpService(repo)
-	cron := time.NewTimer(time.Minute)
 	// make context and defer cancel
 	ctx, cnl := context.WithCancel(context.Background())
 	defer cnl()
 
 	go func() {
-		<-cron.C
-		_ = srv.StartScrapWithContext(ctx)
+		c := time.Tick(time.Second)
+		for now := range c {
+			logger.Sugar().Infow("start scrap sites", "now", now)
+			_ = srv.StartScrapWithContext(ctx)
+			logger.Sugar().Infow("finish scrap sites", "now", time.Since(now))
+
+		}
 	}()
-	serve := server.New(repo)
+	serve := server.New(repo, logger)
 
 	errs := make(chan error, 2)
 
 	logger.Info("start HTTP server")
 	errs <- serve.ListenAndServe(*httpPort)
+
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)

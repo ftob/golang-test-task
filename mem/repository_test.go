@@ -11,6 +11,8 @@ func TestNew(t *testing.T) {
 	type args struct {
 		sites []string
 	}
+	s := make(map[string]gtt.Site)
+
 	tests := []struct {
 		name string
 		args args
@@ -20,19 +22,13 @@ func TestNew(t *testing.T) {
 			name string
 			args args
 			want gtt.Repository
-		}{name: "normal new", args: args{sites: []string{"google.com", "mail.ru"}}, want: &repository{
-			sites:      []string{"google.com", "mail.ru"},
-			store:      make(map[string]gtt.Site),
+		}{name: "normal new", args: args{sites: []string{}}, want: &repository{
+			sites:      []string{},
+			store:      s,
 			mx:         sync.Mutex{},
-			doOnce:     sync.Once{},
 			maxLatency: gtt.Site{},
 			minLatency: gtt.Site{},
 		}},
-		struct {
-			name string
-			args args
-			want gtt.Repository
-		}{name: "empty site list", args: args{sites: []string{}}, want: New([]string{})},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -98,7 +94,6 @@ func Test_repository_Store(t *testing.T) {
 				sites:      tt.fields.sites,
 				store:      tt.fields.store,
 				mx:         tt.fields.mx,
-				doOnce:     tt.fields.doOnce,
 				maxLatency: tt.fields.maxLatency,
 				minLatency: tt.fields.minLatency,
 			}
@@ -151,7 +146,6 @@ func Test_repository_reIndex(t *testing.T) {
 				sites:      tt.fields.sites,
 				store:      tt.fields.store,
 				mx:         tt.fields.mx,
-				doOnce:     tt.fields.doOnce,
 				maxLatency: tt.fields.maxLatency,
 				minLatency: tt.fields.minLatency,
 			}
