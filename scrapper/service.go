@@ -2,6 +2,7 @@ package scrapper
 
 import (
 	"context"
+	"fmt"
 	gtt "github.com/ftob/golang-test-task"
 	"github.com/valyala/fasthttp"
 	"net/url"
@@ -35,6 +36,7 @@ func (sc httpScrapper) Scrap(ur *url.URL) (latency int64, status int, err error)
 	t = time.Now().Unix() - t
 	return t, resp.StatusCode(), err
 }
+
 
 type Service interface {
 	StartScrapWithContext(ctx context.Context) error
@@ -107,13 +109,14 @@ func (s *service) scrapSite(w *sync.WaitGroup, site string) {
 
 func (s *service) nextScrapper() (sc Scrapper) {
 	if s.currentScrapperCursor == int32(s.countScrappers-1) {
-		s.currentScrapperCursor = 0
+			s.currentScrapperCursor = 0
 	}
 
-	if s.currentScrapperCursor == 0 {
+	if s.currentScrapperCursor == 1 {
 		sc = s.scrappers[0]
 	}
-	if sc == nil {
+	fmt.Println(s.currentScrapperCursor)
+	if sc == nil &&  len(s.scrappers) > 0 {
 		sc = s.scrappers[s.currentScrapperCursor]
 	}
 	atomic.AddInt32(&s.currentScrapperCursor, 1)

@@ -9,6 +9,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/valyala/fasthttp"
 	"github.com/valyala/fasthttp/fasthttpadaptor"
+	"go.uber.org/zap"
 )
 
 // server and routing
@@ -17,7 +18,7 @@ type Server struct {
 }
 
 // New server and make routing map
-func New(repo gtt.Repository) *Server {
+func New(repo gtt.Repository, logger *zap.Logger) *Server {
 	r := router.New()
 	// not found page handler
 	nfh := &notFoundHandler{}
@@ -28,7 +29,7 @@ func New(repo gtt.Repository) *Server {
 
 	fieldKeys := []string{"method"}
 
-	sih := sitesInstrumentingHandler{
+	sih := &sitesInstrumentingHandler{
 		next: sh,
 		requestCount: kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 			Namespace: "api",
@@ -37,7 +38,9 @@ func New(repo gtt.Repository) *Server {
 			Help:      "Number of statistics requests received.",
 		}, fieldKeys),
 	}
-	r.GET("/sites", sih.handler)
+
+	lig := &sitesLoggingHandler{sih, logger}
+	r.GET("/sites", lig.handler)
 
 	fhp := fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
 	r.GET("/metrics", fhp)

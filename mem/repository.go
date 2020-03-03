@@ -16,7 +16,6 @@ type repository struct {
 	sites      []string
 	store      map[string]gtt.Site
 	mx         sync.Mutex
-	doOnce     sync.Once
 	maxLatency gtt.Site
 	minLatency gtt.Site
 }
@@ -24,16 +23,24 @@ type repository struct {
 func New(sites []string) gtt.Repository {
 	r := &repository{}
 
-	r.doOnce.Do(func() {
-		r.sites = sites
-		// Make store
-		r.store = make(map[string]gtt.Site)
-		for _, s := range sites {
-			r.store[s] = gtt.Site{}
-		}
+	r.sites = sites
+	// Make store
+	r.store = make(map[string]gtt.Site)
 
-		r.mx = sync.Mutex{}
-	})
+	for _, s := range sites {
+		d, err := url.Parse(s)
+		if err != nil {
+			continue
+		}
+		r.store[s] = gtt.Site{
+			DomainName: d,
+			CountRequest: 0,
+			Latency:      0,
+			HttpStatus:   0,
+		}
+	}
+
+	r.mx = sync.Mutex{}
 
 	return r
 }
